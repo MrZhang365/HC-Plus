@@ -15,4 +15,4 @@
 
 #### 立刻取消禁言
 - 通过WebSocket发送 `{cmd:'speak',hash:'<目标用户的hash值>'}`
-- 在聊天室内发送 `/hash 目标用户的hash值`
+- 在聊天室内发送 `/speak 目标用户的hash值`
