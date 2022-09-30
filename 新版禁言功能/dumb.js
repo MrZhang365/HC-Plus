@@ -108,7 +108,7 @@ export async function run(core, server, socket, data) {
   server.broadcast({
     cmd:'info',
     text:`${badClient.nick} 被禁言 ${time_text}`
-  }, { level: UAC.isModerator });
+  }, { level: (level) => level < UAC.levels.moderator });
   return true;
 }
 
