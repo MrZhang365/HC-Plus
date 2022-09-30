@@ -23,6 +23,12 @@ export async function run(core, server, socket, data) {
       text:'找不到您要移除的命令！'
     },socket)
   }
+  if (data.command == 'reload'){
+    return server.reply({
+      cmd:'warn',
+      text:'哥们儿！什么命令都可以移除，唯独reload命令不能移除！！！'
+    },socket)
+  }
   core.commands.commands = core.commands.commands.filter((cmd) => cmd.info.name !== data.command)
   server.loadHooks()
   // send results to moderators (which the user using this command is higher than)
