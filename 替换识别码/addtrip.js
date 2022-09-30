@@ -45,13 +45,15 @@ export async function run(core, server, socket, data) {
   // add new trip to config
   core.config.trips.push({ old_trip:data.trip,new_trip:data.new_trip });
 
-  // find targets current connections
-  server.broadcast({
-    cmd:'info',
-    text:`你的识别码已被替换为：${data.new_trip}\n重新加入聊天室以后生效。`
-  },{trip:data.trip})
-
-  // notify all mods
+  var sockets = server.findSockets({trip:data.trip})
+  var i;
+  for (i in sockets){
+    sockets[i].trip = data.new_trip
+    server.reply({
+      cmd:'info',
+      text:`你的识别码已被替换为：${data.new_trip}`
+    },sockets[i])
+  }
   server.broadcast({
     cmd: 'info',
     text: `已将识别码“${data.trip}”替换为：${data.new_trip}`,
