@@ -37,6 +37,8 @@ export async function run(core, server, socket,data) {
 export function initHooks(server) {
   server.registerHook('in', 'join', this.joinCheck.bind(this),1);
   server.registerHook('in','chat',this.lockroomCheck.bind(this));
+  server.registerHook('in','move',this.moveCheck.bind(this));
+  server.registerHook('in','chat',this.moveCheckPlus.bind(this),1);
   // TODO: add whisper hook, need hook priorities todo finished first
 }
 export function lockroomCheck(core,server,socket,payload){
@@ -56,16 +58,83 @@ export function lockroomCheck(core,server,socket,payload){
 
   return payload;
 }
-// hook incoming chat commands, prevent chat if they are user
+export function moveCheckPlus(core, server, socket,payload){
+  if (typeof payload.text !== 'string'){
+    return payload
+  }
+  const input = payload.text.split(' ')
+  if (input[0] === '/move' && typeof input[1] === 'string'){
+    if (core.lockedroom.indexOf(input[1]) === -1){
+      return payload
+    }
+    console.log('4')
+    if (UAC.isModerator(socket.level)){
+      server.reply({
+        cmd:"info",
+        text:"此房间处于锁定状态。如果情况稳定，那么请立刻解除锁定。"
+      },socket)
+      return payload
+    }else if (UAC.isTrustedUser(socket.level)){
+      server.reply({
+        cmd:"info",
+        text:"此房间处于锁定状态，如果情况稳定，那么请联系管理员解除锁定。"
+      },socket)
+      return payload
+    }else{
+      server.reply({
+        cmd:"warn",
+        text:"# :(\n## 此房间遇到问题，处于锁定状态。\n#### 房间会在出现非常混乱的情况时暂时锁定，也会在特殊时期时进行宵禁或暂时锁定。\n###### 有关此问题的解决方法：\n- 如果你是站长、管理员或信任用户，请加好你的密码。\n- 耐心等待。"
+      },socket)
+      server.reply({
+        cmd:'info',
+        text:'因此你没有成功移动。'
+      },socket)
+      return false
+    }
+  }else{
+    return payload
+  }
+}
+export function moveCheck(core, server, socket, payload){
+  if (!payload.channel){
+    return payload
+  }
+  if (core.lockedroom.indexOf(payload.channel) === -1){
+    return payload
+  }
+  if (UAC.isModerator(socket.level)){
+    server.reply({
+      cmd:"info",
+      text:"此房间处于锁定状态。如果情况稳定，那么请立刻解除锁定。"
+    },socket)
+    return payload
+  }else if (UAC.isTrustedUser(socket.level)){
+    server.reply({
+      cmd:"info",
+      text:"此房间处于锁定状态，如果情况稳定，那么请联系管理员解除锁定。"
+    },socket)
+    return payload
+  }else{
+    server.reply({
+      cmd:"warn",
+      text:"# :(\n## 此房间遇到问题，处于锁定状态。\n#### 房间会在出现非常混乱的情况时暂时锁定，也会在特殊时期时进行宵禁或暂时锁定。\n###### 有关此问题的解决方法：\n- 如果你是站长、管理员或信任用户，请加好你的密码。\n- 耐心等待。"
+    },socket)
+    server.reply({
+      cmd:'info',
+      text:'因此你没有成功移动。'
+    })
+    return false
+  }
+}
 export function joinCheck(core, server, socket, payload) {
   if (payload.channel===undefined || payload.channel===""){
-    return false
+    return payload
   }
   if (core.lockedroom.indexOf(payload.channel) === -1){
     return payload
   }
   const joinModule = core.commands.get('join');
-  const userInfo = joinModule.parseNickname(core, payload);
+  const userInfo = joinModule.parseNickname(core, payload, socket);
   if (typeof userInfo === "string"){
     return payload
   }
